@@ -18,6 +18,7 @@ import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.cmd.Query;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -119,7 +120,7 @@ public class ConsensusEndpoint {
         // Objectify ID generator, e.g. long or String, then you should generate the unique ID yourself prior to saving.
         //
         // If your client provides the ID then you should probably use PUT instead.
-        if (consensus.getId() != null) {
+        if (consensus.getId()== null) {
             throw new BadRequestException("consensusId cannot be null");
         }
             User user = ofy().load().type(User.class).id(userId).safe();
@@ -170,6 +171,7 @@ public class ConsensusEndpoint {
                 }
             }
         }
+        consensus.setLastUpdate(new Date());
         ofy().save().entity(originalConsensus).now();
         logger.info("Updated Consensus: " + consensus);
         return ofy().load().entity(originalConsensus).now();

@@ -15,9 +15,7 @@
             <param-name>services</param-name>
             <param-value>com.benext.api.UserEndpoint,
                 com.benext.api.ConsensusEndpoint,
-                com.benext.api.ConsensusAnswerEndpoint,
-                com.benext.v2.api.UserEndpoint,
-                com.benext.v2.api.ConsensusEndpoint
+                com.benext.api.ConsensusAnswerEndpoint
             </param-value>
         </init-param>
     </servlet>

@@ -8,6 +8,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Load;
 import com.googlecode.objectify.annotation.Parent;
+import com.googlecode.objectify.annotation.Index;
 
 import java.beans.Transient;
 import java.util.Date;
@@ -20,6 +21,8 @@ public @Data class Consensus {
 
 
     @Id public Long id;
+
+    @Index public Long consensusId;
 
     @Parent public Key<User> user;
 

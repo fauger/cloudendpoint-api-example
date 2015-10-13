@@ -15,6 +15,7 @@ import com.google.api.server.spi.response.ConflictException;
 import com.google.api.server.spi.response.NotFoundException;
 import com.googlecode.objectify.Key;
 
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -58,7 +59,8 @@ public class ConsensusEndpoint {
         // If your client provides the ID then you should probably use PUT instead.
         User user = ofy().load().type(User.class).id(userId).safe();
         Consensus consensus = new Consensus(consensusRequest, user);
-
+        Long globalConsensusId = ofy().factory().allocateId(Consensus.class).getId();
+        consensus.setConsensusId(globalConsensusId);
         ofy().save().entity(consensus).now();
         user.addConsensus(consensus);
         ofy().save().entity(user).now();
@@ -113,10 +115,13 @@ public class ConsensusEndpoint {
             name = "associate_consensus_with_user",
             path = "consensus_user",
             httpMethod = ApiMethod.HttpMethod.POST)
-    public void associateConsensusAndUser(@Named("userId") long userId,@Named("consensusId") long consensusId) {
+    public void associateConsensusAndUser(@Named("userId") long userId,@Named("consensusId") long consensusId) throws BadRequestException {
         logger.info("associate_consensus_with_user: " + userId);
         User user = ofy().load().type(User.class).id(userId).safe();
-        Consensus consensus = ofy().load().key(Key.create(Key.create(User.class, user.getId()), Consensus.class,consensusId)).now();
+        Consensus consensus = ofy().load().type(Consensus.class).filter("consensusId",consensusId).first().safe();
+        if (consensus.getUser().equivalent(Key.create(User.class,userId))) {
+            throw new BadRequestException("Association already exist");
+        }
         user.addConsensus(consensus);
         consensus.setUser(Key.create(user));
         ofy().save().entity(consensus).now();
@@ -137,11 +142,11 @@ public class ConsensusEndpoint {
             name = "update",
             path = "consensus/{id}",
             httpMethod = ApiMethod.HttpMethod.PUT)
-    public ConsensusResponse update(@Named("id") long consensusId, ConsensusRequest consensusRequest) throws NotFoundException {
-        Consensus consensus = ofy().load().type(Consensus.class).id(consensusId).safe();
-        ofy().save().entity(consensus.update(consensusRequest)).now();
-        logger.info("Updated Consensus: " + consensus);
-        return new ConsensusResponse(ofy().load().type(Consensus.class).id(consensus.getId()).now());
+    public void update(@Named("id") long consensusId, ConsensusRequest consensusRequest) throws NotFoundException {
+        List<Consensus> consensusList = ofy().load().type(Consensus.class).filter("consensusId", consensusId).list();
+        for (Consensus consensus : consensusList) {
+            ofy().save().entity(consensus.update(consensusRequest)).now();
+        }
     }
 
     /**
@@ -156,8 +161,10 @@ public class ConsensusEndpoint {
             path = "consensus/{id}",
             httpMethod = ApiMethod.HttpMethod.DELETE)
     public void remove(@Named("id") long id) throws NotFoundException {
-        ofy().load().type(Consensus.class).id(id).safe();
-        ofy().delete().type(Consensus.class).id(id);
+        List<Consensus> consensusList = ofy().load().type(Consensus.class).filter("consensusId", id).list();
+        for (Consensus consensus : consensusList) {
+            ofy().delete().type(Consensus.class).id(id);
+        }
         logger.info("Deleted Consensus with ID: " + id);
     }
 

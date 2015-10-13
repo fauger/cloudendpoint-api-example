@@ -11,6 +11,7 @@ import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.response.BadRequestException;
 import com.google.api.server.spi.response.NotFoundException;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,11 +73,17 @@ public class ConsensusAnswerEndpoint {
             name = "update",
             httpMethod = ApiMethod.HttpMethod.PUT)
     public ConsensusAnswer update(ConsensusAnswer consensusAnswer) throws NotFoundException, BadRequestException {
-        List<ConsensusAnswer> consensusAnswers = ofy().load().type(ConsensusAnswer.class).filter("consensusId", consensusAnswer.getConsensusId()).filter("userId", consensusAnswer.getUserId()).list();
-        if (consensusAnswers.isEmpty()) {
-            throw new NotFoundException("No consensusAnswer for consensusId " + consensusAnswer.getConsensusId() + " and userId " + consensusAnswer.getUserId());
+        Consensus consensus = ofy().load().type(Consensus.class).id(consensusAnswer.getConsensusId()).safe();
+        consensus.setLastUpdate(new Date());
+        ConsensusAnswer consensusAnswerDB = ofy().load().type(ConsensusAnswer.class).filter("consensusId", consensusAnswer.getConsensusId()).filter("userId", consensusAnswer.getUserId()).first().now();
+        if (consensusAnswerDB==null) {
+            insertAnswer(consensusAnswer);
         }
-        ofy().save().entity(consensusAnswer).now();
+        else{
+            consensusAnswer.setId(consensusAnswerDB.getId());
+            ofy().save().entity(consensusAnswer).now();
+        }
+        ofy().save().entity(consensus).now();
         logger.info("Updated Consensus: " + consensusAnswer);
         return ofy().load().entity(consensusAnswer).now();
     }

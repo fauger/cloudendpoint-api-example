@@ -1,7 +1,9 @@
 package com.benext.services;
 
-import com.benext.v2.model.Consensus;
-import com.benext.v2.model.User;
+
+import com.benext.model.Consensus;
+import com.benext.model.ConsensusAnswer;
+import com.benext.model.User;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
@@ -16,6 +18,7 @@ public class OfyService {
     static {
         ObjectifyService.register(User.class);
         ObjectifyService.register(Consensus.class);
+        ObjectifyService.register(ConsensusAnswer.class);
     }
 
     public static Objectify ofy() {
